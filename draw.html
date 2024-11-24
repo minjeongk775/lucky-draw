@@ -18,6 +18,9 @@
             margin: 0 auto;
             padding: 20px;
             text-align: center;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
         }
         .header {
             margin: 20px 0;
@@ -28,11 +31,17 @@
             font-size: 3em;
             margin: 0;
             text-shadow: 0 0 10px rgba(74, 108, 247, 0.5);
+            animation: glowText 2s infinite alternate;
+        }
+        @keyframes glowText {
+            from { text-shadow: 0 0 10px rgba(74, 108, 247, 0.5); }
+            to { text-shadow: 0 0 20px rgba(74, 108, 247, 0.8); }
         }
         .participant-count {
-            font-size: 1.2em;
+            font-size: 1.5em;
             color: #aaa;
-            margin: 10px 0;
+            margin: 15px 0;
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
         }
         #countdown {
             font-size: 15em;
@@ -59,6 +68,11 @@
             position: relative;
             overflow: hidden;
             box-shadow: 0 10px 30px rgba(74, 108, 247, 0.3);
+            animation: pulseBox 2s infinite alternate;
+        }
+        @keyframes pulseBox {
+            from { box-shadow: 0 10px 30px rgba(74, 108, 247, 0.3); }
+            to { box-shadow: 0 10px 40px rgba(74, 108, 247, 0.5); }
         }
         .winner-title {
             font-size: 2.5em;
@@ -82,28 +96,53 @@
             transform: translateY(0);
             transition: all 1s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        button {
+        .draw-button {
             background: linear-gradient(135deg, #4a6cf7, #6e8efb);
             color: white;
             border: none;
-            padding: 15px 40px;
-            font-size: 1.3em;
+            padding: 25px 80px;
+            font-size: 2em;
             border-radius: 50px;
             cursor: pointer;
-            margin: 20px;
+            margin: 40px auto;
             transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
+            box-shadow: 0 5px 15px rgba(74, 108, 247, 0.3);
+            animation: buttonPulse 2s infinite alternate;
         }
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(74, 108, 247, 0.3);
+        @keyframes buttonPulse {
+            from { transform: scale(1); }
+            to { transform: scale(1.05); }
         }
-        button:disabled {
+        .draw-button:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 15px 30px rgba(74, 108, 247, 0.4);
+        }
+        .draw-button:active {
+            transform: translateY(-1px);
+        }
+        .draw-button:disabled {
             background: #666;
             cursor: not-allowed;
             transform: none;
             box-shadow: none;
+            animation: none;
+        }
+        .draw-button::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, rgba(255,255,255,0.1), rgba(255,255,255,0));
+            transform: rotate(45deg);
+            animation: buttonShine 3s infinite;
+        }
+        @keyframes buttonShine {
+            0% { transform: rotate(45deg) translateX(-100%); }
+            100% { transform: rotate(45deg) translateX(100%); }
         }
         .confetti {
             position: fixed;
@@ -125,15 +164,17 @@
             top: 20px;
             left: 20px;
             background: rgba(255, 255, 255, 0.1);
-            padding: 10px 20px;
+            padding: 12px 24px;
             border-radius: 30px;
             color: white;
             text-decoration: none;
-            font-size: 1em;
+            font-size: 1.1em;
             transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
         }
         .back-btn:hover {
             background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
         }
         @keyframes confettiFall {
             0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
@@ -147,9 +188,7 @@
             position: absolute;
             width: 100%;
             height: 100%;
-            background: radial-gradient(circle at center, 
-                                    rgba(74, 108, 247, 0.2) 0%, 
-                                    transparent 70%);
+            background: radial-gradient(circle at center, rgba(74, 108, 247, 0.2) 0%, transparent 70%);
             animation: rotate 10s linear infinite;
             pointer-events: none;
         }
@@ -166,18 +205,20 @@
         <div class="header">
             <h1 class="title">럭키드로우 추첨</h1>
             <div id="participant-count" class="participant-count">
-                참가자 수: 0명
+                참가자 수 확인 중...
             </div>
         </div>
 
+        <div id="countdown"></div>
+
         <div id="winner-display">
             <div class="light-beam"></div>
-            <div class="winner-info">당첨자가 곧 공개됩니다!</div>
+            <div class="winner-info" style="font-size: 1.5em;">당첨자가 곧 공개됩니다!</div>
         </div>
-
-        <div id="countdown"></div>
         
-        <button onclick="startDraw()" id="drawButton">추첨 시작</button>
+        <button onclick="startDraw()" id="drawButton" class="draw-button">
+            🎲 추첨 시작 🎲
+        </button>
     </div>
 
     <script>
@@ -186,13 +227,13 @@
 
         function updateParticipantCount() {
             document.getElementById('participant-count').textContent = 
-                `참가자 수: ${participants.length}명`;
+                `현재 참가자 수: ${participants.length}명`;
             document.getElementById('drawButton').disabled = participants.length === 0;
         }
 
         function createConfetti() {
             const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96f7d2', '#f7d794', '#ff9ff3'];
-            for (let i = 0; i < 100; i++) {
+            for (let i = 0; i < 150; i++) {
                 const confetti = document.createElement('div');
                 confetti.className = 'confetti';
                 confetti.style.left = Math.random() * 100 + 'vw';
@@ -206,7 +247,7 @@
         }
 
         function createSparkles(element) {
-            for (let i = 0; i < 20; i++) {
+            for (let i = 0; i < 30; i++) {
                 const sparkle = document.createElement('div');
                 sparkle.className = 'sparkle';
                 sparkle.style.left = Math.random() * 100 + '%';
@@ -254,7 +295,6 @@
                 <div class="winner-id">${winner.empId}</div>
             `;
 
-            // 애니메이션 적용
             setTimeout(() => {
                 document.querySelector('.winner-title').classList.add('show-winner');
                 document.querySelector('.winner-name').classList.add('show-winner');
