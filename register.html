@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>럭키드로우 참가 등록</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            padding: 20px;
+            background-color: #f0f2f5;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .register-form {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .input-group {
+            margin: 20px 0;
+        }
+        input {
+            width: 80%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        button {
+            background: #4a6cf7;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1em;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 20px 0;
+            transition: all 0.3s ease;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(74, 108, 247, 0.3);
+        }
+        .success-message {
+            color: #4CAF50;
+            padding: 10px;
+            margin: 10px 0;
+            display: none;
+        }
+        .error-message {
+            color: #f44336;
+            padding: 10px;
+            margin: 10px 0;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="register-form">
+            <h1>럭키드로우 참가 등록</h1>
+            <div class="input-group">
+                <input type="text" id="name" placeholder="이름을 입력하세요">
+                <input type="text" id="empId" placeholder="사번을 입력하세요">
+            </div>
+            <button onclick="registerParticipant()">등록하기</button>
+            <div id="successMessage" class="success-message">
+                성공적으로 등록되었습니다!
+            </div>
+            <div id="errorMessage" class="error-message">
+                이미 등록된 사번입니다.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let participants = JSON.parse(localStorage.getItem('participants') || '[]');
+
+        function registerParticipant() {
+            const name = document.getElementById('name').value.trim();
+            const empId = document.getElementById('empId').value.trim();
+            const successMsg = document.getElementById('successMessage');
+            const errorMsg = document.getElementById('errorMessage');
+            
+            successMsg.style.display = 'none';
+            errorMsg.style.display = 'none';
+
+            if (!name || !empId) {
+                errorMsg.textContent = '이름과 사번을 모두 입력해주세요.';
+                errorMsg.style.display = 'block';
+                return;
+            }
+
+            if (participants.some(p => p.empId === empId)) {
+                errorMsg.textContent = '이미 등록된 사번입니다.';
+                errorMsg.style.display = 'block';
+                return;
+            }
+
+            participants.push({ name, empId, timestamp: new Date().toISOString() });
+            localStorage.setItem('participants', JSON.stringify(participants));
+
+            document.getElementById('name').value = '';
+            document.getElementById('empId').value = '';
+            successMsg.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
