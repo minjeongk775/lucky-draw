@@ -3,254 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>럭키드로우 관리자</title>
+    <title>럭키드로우 참가 등록</title>
     <style>
         body {
             font-family: 'Arial', sans-serif;
-            background-color: #f0f2f5;
-            margin: 0;
+            text-align: center;
             padding: 20px;
-            height: 100vh;
+            background-color: #f0f2f5;
+            min-height: 100vh;
+            margin: 0;
         }
         .container {
-            max-width: 1200px;
+            max-width: 500px;
             margin: 0 auto;
             padding: 20px;
-            display: none;
         }
-        .section {
+        .register-form {
             background: white;
             padding: 30px;
             border-radius: 15px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
         }
-        .tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-        .tab {
-            padding: 15px 30px;
-            background: white;
-            border: none;
-            border-radius: 50px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: bold;
-            transition: all 0.3s ease;
-        }
-        .tab.active {
-            background: #4a6cf7;
-            color: white;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
+        .input-group {
             margin: 20px 0;
         }
-        th, td {
-            padding: 15px;
-            text-align: left;
-            border-bottom: 1px solid #eee;
-        }
-        th {
-            background: #f8f9fa;
-            font-weight: bold;
-        }
-        tr:hover {
-            background: #f8f9fa;
-        }
-        button {
-            padding: 8px 15px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        .edit-btn {
-            background: #4CAF50;
-            color: white;
-        }
-        .delete-btn {
-            background: #f44336;
-            color: white;
-            margin-left: 5px;
-        }
-        .add-btn {
-            background: #4a6cf7;
-            color: white;
-            padding: 12px 24px;
-            font-size: 16px;
-            border-radius: 50px;
-        }
-        #loginSection {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.85);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-        }
-        .login-box {
-            background: white;
-            padding: 40px;
-            border-radius: 20px;
-            text-align: center;
-            width: 90%;
-            max-width: 400px;
-        }
-        .login-box input {
-            width: 100%;
+        input {
+            width: 80%;
             padding: 12px;
-            margin: 10px 0;
+            margin: 8px 0;
             border: 1px solid #ddd;
             border-radius: 8px;
             font-size: 16px;
-            box-sizing: border-box;
         }
-        .login-box button {
-            width: 100%;
-            padding: 12px;
+        button {
             background: #4a6cf7;
             color: white;
-            font-size: 16px;
-            border-radius: 8px;
-            margin-top: 20px;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1em;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 20px 0;
+            transition: all 0.3s ease;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(74, 108, 247, 0.3);
+        }
+        .success-message {
+            color: #4CAF50;
+            padding: 10px;
+            margin: 10px 0;
+            display: none;
+        }
+        .error-message {
+            color: #f44336;
+            padding: 10px;
+            margin: 10px 0;
+            display: none;
         }
     </style>
 </head>
 <body>
-    <div id="loginSection">
-        <div class="login-box">
-            <h2>관리자 로그인</h2>
-            <input type="password" id="adminPassword" placeholder="비밀번호를 입력하세요">
-            <button onclick="login()">로그인</button>
-        </div>
-    </div>
-
     <div class="container">
-        <div class="tabs">
-            <button class="tab active" onclick="showParticipantList()">참가자 관리</button>
-            <button class="tab" onclick="window.location.href='draw.html'">추첨 페이지</button>
-        </div>
-
-        <div class="section">
-            <button class="add-btn" onclick="showAddForm()">새 참가자 추가</button>
-            <div id="participantList"></div>
+        <div class="register-form">
+            <h1>럭키드로우 참가 등록</h1>
+            <div class="input-group">
+                <input type="text" id="name" placeholder="이름을 입력하세요">
+                <input type="text" id="empId" placeholder="사번을 입력하세요">
+            </div>
+            <button onclick="registerParticipant()">등록하기</button>
+            <div id="successMessage" class="success-message">
+                성공적으로 등록되었습니다!
+            </div>
+            <div id="errorMessage" class="error-message">
+                이미 등록된 사번입니다.
+            </div>
         </div>
     </div>
 
     <script>
-        const ADMIN_PASSWORD = '1234';
         let participants = JSON.parse(localStorage.getItem('participants') || '[]');
 
-        function login() {
-            const password = document.getElementById('adminPassword').value;
-            if (password === ADMIN_PASSWORD) {
-                document.getElementById('loginSection').style.display = 'none';
-                document.querySelector('.container').style.display = 'block';
-                updateParticipantList();
-            } else {
-                alert('비밀번호가 올바르지 않습니다.');
-            }
-        }
+        function registerParticipant() {
+            const name = document.getElementById('name').value.trim();
+            const empId = document.getElementById('empId').value.trim();
+            const successMsg = document.getElementById('successMessage');
+            const errorMsg = document.getElementById('errorMessage');
+            
+            successMsg.style.display = 'none';
+            errorMsg.style.display = 'none';
 
-        function showParticipantList() {
-            updateParticipantList();
-        }
-
-        function updateParticipantList() {
-            const list = document.getElementById('participantList');
-            if (participants.length === 0) {
-                list.innerHTML = '<p>등록된 참가자가 없습니다.</p>';
+            if (!name || !empId) {
+                errorMsg.textContent = '이름과 사번을 모두 입력해주세요.';
+                errorMsg.style.display = 'block';
                 return;
             }
-
-            list.innerHTML = `
-                <table>
-                    <thead>
-                        <tr>
-                            <th>이름</th>
-                            <th>사번</th>
-                            <th>등록시간</th>
-                            <th>작업</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${participants.map((p, i) => `
-                            <tr>
-                                <td>${p.name}</td>
-                                <td>${p.empId}</td>
-                                <td>${new Date(p.timestamp).toLocaleString()}</td>
-                                <td>
-                                    <button class="edit-btn" onclick="editParticipant(${i})">수정</button>
-                                    <button class="delete-btn" onclick="deleteParticipant(${i})">삭제</button>
-                                </td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            `;
-        }
-
-        function showAddForm() {
-            const name = prompt('참가자 이름:');
-            if (!name) return;
-            
-            const empId = prompt('사번:');
-            if (!empId) return;
 
             if (participants.some(p => p.empId === empId)) {
-                alert('이미 등록된 사번입니다.');
+                errorMsg.textContent = '이미 등록된 사번입니다.';
+                errorMsg.style.display = 'block';
                 return;
             }
 
-            participants.push({
-                name,
-                empId,
-                timestamp: new Date().toISOString()
-            });
+            participants.push({ name, empId, timestamp: new Date().toISOString() });
             localStorage.setItem('participants', JSON.stringify(participants));
-            updateParticipantList();
+
+            document.getElementById('name').value = '';
+            document.getElementById('empId').value = '';
+            successMsg.style.display = 'block';
         }
-
-        function editParticipant(index) {
-            const p = participants[index];
-            const name = prompt('참가자 이름:', p.name);
-            if (!name) return;
-            
-            const empId = prompt('사번:', p.empId);
-            if (!empId) return;
-
-            if (empId !== p.empId && participants.some(p => p.empId === empId)) {
-                alert('이미 등록된 사번입니다.');
-                return;
-            }
-
-            participants[index] = { ...p, name, empId };
-            localStorage.setItem('participants', JSON.stringify(participants));
-            updateParticipantList();
-        }
-
-        function deleteParticipant(index) {
-            if (!confirm('정말 삭제하시겠습니까?')) return;
-            
-            participants.splice(index, 1);
-            localStorage.setItem('participants', JSON.stringify(participants));
-            updateParticipantList();
-        }
-
-        // 엔터 키로 로그인
-        document.getElementById('adminPassword').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                login();
-            }
-        });
     </script>
 </body>
 </html>
