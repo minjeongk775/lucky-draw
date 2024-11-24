@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>럭키드로우 추첨</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
+            margin: 0;
+            min-height: 100vh;
+            color: white;
+            overflow: hidden;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+        .header {
+            margin: 20px 0;
+            position: relative;
+            z-index: 2;
+        }
+        .title {
+            font-size: 3em;
+            margin: 0;
+            text-shadow: 0 0 10px rgba(74, 108, 247, 0.5);
+        }
+        .participant-count {
+            font-size: 1.2em;
+            color: #aaa;
+            margin: 10px 0;
+        }
+        #countdown {
+            font-size: 15em;
+            font-weight: bold;
+            height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #4a6cf7;
+            text-shadow: 0 0 20px rgba(74, 108, 247, 0.5);
+            transition: all 0.3s ease;
+        }
+        #winner-display {
+            background: linear-gradient(135deg, #4a6cf7, #6e8efb);
+            padding: 40px;
+            border-radius: 20px;
+            margin: 20px auto;
+            max-width: 800px;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(74, 108, 247, 0.3);
+        }
+        .winner-title {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        .winner-name {
+            font-size: 3em;
+            margin: 10px 0;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        .winner-id {
+            font-size: 1.8em;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        .show-winner {
+            opacity: 1;
+            transform: translateY(0);
+            transition: all 1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        button {
+            background: linear-gradient(135deg, #4a6cf7, #6e8efb);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.3em;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 20px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(74, 108, 247, 0.3);
+        }
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            opacity: 0;
+            animation: confettiFall linear forwards;
+        }
+        .sparkle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: white;
+            border-radius: 50%;
+            animation: sparkle 0.8s infinite;
+        }
+        .back-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px 20px;
+            border-radius: 30px;
+            color: white;
+            text-decoration: none;
+            font-size: 1em;
+            transition: all 0.3s ease;
+        }
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        @keyframes confettiFall {
+            0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+        @keyframes sparkle {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+        .light-beam {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, 
+                                    rgba(74, 108, 247, 0.2) 0%, 
+                                    transparent 70%);
+            animation: rotate 10s linear infinite;
+            pointer-events: none;
+        }
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <a href="admin.html" class="back-btn">← 관리자 페이지로</a>
+    
+    <div class="container">
+        <div class="header">
+            <h1 class="title">럭키드로우 추첨</h1>
+            <div id="participant-count" class="participant-count">
+                참가자 수: 0명
+            </div>
+        </div>
+
+        <div id="winner-display">
+            <div class="light-beam"></div>
+            <div class="winner-info">당첨자가 곧 공개됩니다!</div>
+        </div>
+
+        <div id="countdown"></div>
+        
+        <button onclick="startDraw()" id="drawButton">추첨 시작</button>
+    </div>
+
+    <script>
+        let participants = JSON.parse(localStorage.getItem('participants') || '[]');
+        let isDrawing = false;
+
+        function updateParticipantCount() {
+            document.getElementById('participant-count').textContent = 
+                `참가자 수: ${participants.length}명`;
+            document.getElementById('drawButton').disabled = participants.length === 0;
+        }
+
+        function createConfetti() {
+            const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96f7d2', '#f7d794', '#ff9ff3'];
+            for (let i = 0; i < 100; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.animation = `confettiFall ${1 + Math.random() * 2}s linear forwards`;
+                confetti.style.animationDelay = Math.random() * 3 + 's';
+                document.body.appendChild(confetti);
+
+                setTimeout(() => confetti.remove(), 5000);
+            }
+        }
+
+        function createSparkles(element) {
+            for (let i = 0; i < 20; i++) {
+                const sparkle = document.createElement('div');
+                sparkle.className = 'sparkle';
+                sparkle.style.left = Math.random() * 100 + '%';
+                sparkle.style.top = Math.random() * 100 + '%';
+                sparkle.style.animationDelay = Math.random() * 2 + 's';
+                element.appendChild(sparkle);
+            }
+        }
+
+        function startDraw() {
+            if (participants.length === 0 || isDrawing) return;
+            isDrawing = true;
+
+            const button = document.getElementById('drawButton');
+            const countdownElement = document.getElementById('countdown');
+            button.disabled = true;
+
+            let count = 3;
+            function countdown() {
+                if (count > 0) {
+                    countdownElement.textContent = count;
+                    countdownElement.style.transform = 'scale(1.2)';
+                    setTimeout(() => {
+                        countdownElement.style.transform = 'scale(1)';
+                    }, 200);
+                    count--;
+                    setTimeout(countdown, 1000);
+                } else {
+                    countdownElement.textContent = '';
+                    selectWinner();
+                }
+            }
+            countdown();
+        }
+
+        function selectWinner() {
+            const winnerIndex = Math.floor(Math.random() * participants.length);
+            const winner = participants[winnerIndex];
+
+            const winnerDisplay = document.getElementById('winner-display');
+            winnerDisplay.innerHTML = `
+                <div class="light-beam"></div>
+                <div class="winner-title">🎉 축하합니다! 🎉</div>
+                <div class="winner-name">${winner.name}</div>
+                <div class="winner-id">${winner.empId}</div>
+            `;
+
+            // 애니메이션 적용
+            setTimeout(() => {
+                document.querySelector('.winner-title').classList.add('show-winner');
+                document.querySelector('.winner-name').classList.add('show-winner');
+                document.querySelector('.winner-id').classList.add('show-winner');
+            }, 100);
+
+            createConfetti();
+            createSparkles(winnerDisplay);
+
+            participants.splice(winnerIndex, 1);
+            localStorage.setItem('participants', JSON.stringify(participants));
+            
+            isDrawing = false;
+            updateParticipantCount();
+        }
+
+        // 초기화
+        updateParticipantCount();
+    </script>
+</body>
+</html>
