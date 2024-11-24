@@ -5,30 +5,39 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>럭키드로우 추첨</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
             font-family: 'Arial', sans-serif;
-            background: #ffffff;
-            margin: 0;
-            padding: 20px;
+            background-color: #ffffff;
             color: #333;
+            line-height: 1.6;
+            padding: 20px;
         }
 
         .container {
             max-width: 800px;
             margin: 0 auto;
             text-align: center;
+            padding: 20px;
         }
 
         .title {
             color: #4a6cf7;
-            font-size: 2.5em;
-            margin: 20px 0;
+            font-size: 36px;
+            margin-bottom: 20px;
+            margin-top: 20px;
         }
 
         .participant-count {
-            font-size: 1.2em;
+            font-size: 20px;
             color: #666;
-            margin: 10px 0;
+            margin: 20px 0;
+            font-weight: bold;
         }
 
         #winner-display {
@@ -36,39 +45,46 @@
             color: white;
             padding: 30px;
             border-radius: 15px;
-            margin: 20px 0;
+            margin: 20px auto;
             min-height: 150px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.5em;
+            font-size: 24px;
+            max-width: 600px;
         }
 
         #countdown {
-            font-size: 6em;
+            font-size: 100px;
             color: #4a6cf7;
-            height: 120px;
+            height: 150px;
             display: flex;
             align-items: center;
             justify-content: center;
             margin: 20px 0;
+            font-weight: bold;
         }
 
         #drawButton {
-            background: linear-gradient(135deg, #4a6cf7, #6e8efb);
+            display: block;
+            width: 300px;
+            margin: 30px auto;
+            padding: 20px 40px;
+            background: #4a6cf7;
             color: white;
+            font-size: 24px;
             border: none;
-            padding: 20px 60px;
-            font-size: 1.5em;
             border-radius: 50px;
             cursor: pointer;
-            margin: 20px 0;
-            box-shadow: 0 4px 15px rgba(74, 108, 247, 0.3);
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(74, 108, 247, 0.2);
         }
 
         #drawButton:hover {
+            background: #6e8efb;
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(74, 108, 247, 0.4);
+            box-shadow: 0 6px 12px rgba(74, 108, 247, 0.3);
         }
 
         #drawButton:disabled {
@@ -85,21 +101,23 @@
             color: white;
             text-decoration: none;
             border-radius: 25px;
-            margin-bottom: 20px;
+            margin: 10px;
+            font-size: 16px;
         }
 
         .winner-title {
-            font-size: 1.5em;
-            margin-bottom: 10px;
+            font-size: 28px;
+            margin-bottom: 15px;
         }
 
         .winner-name {
-            font-size: 2em;
-            margin: 10px 0;
+            font-size: 36px;
+            margin: 15px 0;
+            font-weight: bold;
         }
 
         .winner-id {
-            font-size: 1.2em;
+            font-size: 24px;
         }
 
         .confetti {
@@ -131,7 +149,7 @@
 
         <div id="countdown"></div>
 
-        <button onclick="startDraw()" id="drawButton">
+        <button id="drawButton" onclick="startDraw()">
             🎲 추첨 시작 🎲
         </button>
     </div>
@@ -201,10 +219,15 @@
             localStorage.setItem('participants', JSON.stringify(participants));
             
             isDrawing = false;
+            button.disabled = participants.length === 0;
             updateParticipantCount();
         }
 
-        // 초기화
+        // 페이지 로드 시 초기화
+        updateParticipantCount();
+    </script>
+</body>
+</html>
         updateParticipantCount();
     </script>
 </body>
