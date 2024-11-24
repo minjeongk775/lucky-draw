@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>럭키드로우</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            padding: 20px;
+            background-color: #f0f2f5;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .section {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .tab {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            background: white;
+            transition: all 0.3s ease;
+        }
+        .tab.active {
+            background: #4a6cf7;
+            color: white;
+        }
+        #countdown {
+            font-size: 6em;
+            font-weight: bold;
+            color: #4a6cf7;
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #winner-display {
+            background: linear-gradient(135deg, #4a6cf7, #6e8efb);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin: 10px 0;
+            min-height: 150px;
+        }
+        .winner-title {
+            font-size: 2em;
+            margin-bottom: 15px;
+            animation: popIn 0.5s ease-out;
+        }
+        .winner-name {
+            font-size: 1.8em;
+            margin: 10px 0;
+            animation: popIn 0.5s ease-out 0.2s both;
+        }
+        .winner-id {
+            font-size: 1.3em;
+            opacity: 0.9;
+            animation: popIn 0.5s ease-out 0.4s both;
+        }
+        button {
+            background: #4a6cf7;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 1.1em;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 8px;
+            transition: all 0.3s ease;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(74, 108, 247, 0.3);
+        }
+        button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .input-group {
+            margin: 10px 0;
+        }
+        input {
+            padding: 8px 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 200px;
+            margin: 5px;
+        }
+        #participant-list {
+            margin: 20px 0;
+            text-align: left;
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .participant-item {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .delete-btn {
+            background: #ff4444;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="tabs">
+            <button class="tab active" onclick="showSection('draw')">추첨</button>
+            <button class="tab" onclick="showSection('register')">참가자 등록</button>
+        </div>
+
+        <div id="draw-section" class="section">
+            <h1>럭키드로우</h1>
+            <div id="participant-count">참가자 수: 0명</div>
+            <div id="winner-display">
+                <div class="winner-info">당첨자가 여기에 표시됩니다</div>
+            </div>
+            <div id="countdown"></div>
+            <button onclick="startDraw()" id="drawButton" disabled>추첨 시작</button>
+        </div>
+
+        <div id="register-section" class="section" style="display:none;">
+            <h2>참가자 등록</h2>
+            <div class="input-group">
+                <input type="text" id="name" placeholder="이름">
+                <input type="text" id="empId" placeholder="사번">
+                <button onclick="registerParticipant()">등록</button>
+            </div>
+            <div id="participant-list"></div>
+        </div>
+    </div>
+
+    <script>
+        let participants = JSON.parse(localStorage.getItem('participants') || '[]');
+        let isDrawing = false;
+
+        function updateParticipantCount() {
+            document.getElementById('participant-count').textContent = 
+                `참가자 수: ${participants.length}명`;
+            document.getElementById('drawButton').disabled = participants.length === 0;
+            updateParticipantList();
+            saveParticipants();
+        }
+
+        function saveParticipants() {
+            localStorage.setItem('participants', JSON.stringify(participants));
+        }
+
+        function registerParticipant() {
+            const name = document.getElementById('name').value.trim();
+            const empId = document.getElementById('empId').value.trim();
+            
+            if (!name || !empId) {
+                alert('이름과 사번을 모두 입력해주세요.');
+                return;
+            }
+
+            if (participants.some(p => p.empId === empId)) {
+                alert('이미 등록된 사번입니다.');
+                return;
+            }
+
+            participants.push({ name, empId });
+            document.getElementById('name').value = '';
+            document.getElementById('empId').value = '';
+            updateParticipantCount();
+        }
+
+        function updateParticipantList() {
+            const list = document.getElementById('participant-list');
+            list.innerHTML = participants.map((p, index) => `
+                <div class="participant-item">
+                    ${p.name} (${p.empId})
+                    <button class="delete-btn" onclick="deleteParticipant(${index})">삭제</button>
+                </div>
+            `).join('');
+        }
+
+        function deleteParticipant(index) {
+            participants.splice(index, 1);
+            updateParticipantCount();
+        }
+
+        function showSection(section) {
+            document.querySelectorAll('.section').forEach(s => s.style.display = 'none');
+            document.getElementById(section + '-section').style.display = 'block';
+            
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+
+        function startDraw() {
+            if (participants.length === 0 || isDrawing) return;
+            isDrawing = true;
+
+            const button = document.getElementById('drawButton');
+            button.disabled = true;
+
+            let count = 3;
+            const countdownElement = document.getElementById('countdown');
+            
+            function countdown() {
+                if (count > 0) {
+                    countdownElement.textContent = count;
+                    count--;
+                    setTimeout(countdown, 1000);
+                } else {
+                    countdownElement.textContent = '';
+                    selectWinner();
+                }
+            }
+            countdown();
+        }
+
+        function selectWinner() {
+            const winnerIndex = Math.floor(Math.random() * participants.length);
+            const winner = participants[winnerIndex];
+
+            const winnerDisplay = document.getElementById('winner-display');
+            winnerDisplay.innerHTML = `
+                <div class="winner-title">🎉 축하합니다! 🎉</div>
+                <div class="winner-name">${winner.name}</div>
+                <div class="winner-id">${winner.empId}</div>
+            `;
+
+            participants.splice(winnerIndex, 1);
+            isDrawing = false;
+            updateParticipantCount();
+        }
+
+        // 초기화
+        updateParticipantCount();
+    </script>
+</body>
+</html>
