@@ -4,143 +4,272 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>럭키드로우 추첨</title>
-    <!-- Firebase SDK 추가 -->
+    <meta name="robots" content="noindex, nofollow">
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
     <style>
         body {
             font-family: 'Arial', sans-serif;
-            background: #ffffff;
             margin: 0;
-            padding: 20px;
-            color: #333;
+            padding: 0;
+            background-color: #f5f5f5;
+            min-height: 100vh;
         }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            text-align: center;
-            padding: 20px;
-        }
-        .title {
-            color: #4a6cf7;
-            font-size: 36px;
-            margin: 20px 0;
-            animation: fadeIn 1s ease-out;
-        }
-        .participant-count {
-            font-size: 20px;
-            color: #666;
-            margin: 20px 0;
-            font-weight: bold;
-        }
-        #winner-display {
-            background: linear-gradient(135deg, #4a6cf7, #6e8efb);
-            color: white;
-            padding: 30px;
-            border-radius: 15px;
-            margin: 20px auto;
-            min-height: 150px;
+
+        #loginSection {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 24px;
-            max-width: 600px;
-            box-shadow: 0 5px 15px rgba(74, 108, 247, 0.2);
+            z-index: 1000;
         }
+
+        .login-box {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            display: none;
+        }
+
+        .user-info {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .user-info img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+        }
+
+        .title {
+            color: #4285f4;
+            font-size: 36px;
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        #winner-display {
+            background: linear-gradient(135deg, #4285f4, #6e8efb);
+            color: white;
+            padding: 40px;
+            border-radius: 15px;
+            margin: 20px 0;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(66, 133, 244, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
         #countdown {
             font-size: 120px;
-            color: #4a6cf7;
+            color: #4285f4;
             height: 150px;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 20px 0;
+            text-shadow: 0 2px 10px rgba(66, 133, 244, 0.2);
             font-weight: bold;
-            text-shadow: 0 2px 10px rgba(74, 108, 247, 0.2);
         }
-        #drawButton {
-            display: block;
-            width: 300px;
-            margin: 30px auto;
-            padding: 20px 40px;
-            background: linear-gradient(135deg, #4a6cf7, #6e8efb);
+
+        .draw-button {
+            background: #4285f4;
             color: white;
-            font-size: 24px;
             border: none;
+            padding: 20px 60px;
+            font-size: 24px;
             border-radius: 50px;
             cursor: pointer;
-            font-weight: bold;
+            margin: 20px;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(74, 108, 247, 0.3);
+            box-shadow: 0 4px 15px rgba(66, 133, 244, 0.3);
         }
-        #drawButton:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(74, 108, 247, 0.4);
+
+        .draw-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(66, 133, 244, 0.4);
         }
-        #drawButton:disabled {
-            background: #cccccc;
+
+        .draw-button:disabled {
+            background: #ccc;
             cursor: not-allowed;
             transform: none;
             box-shadow: none;
         }
+
+        .winner-title {
+            font-size: 32px;
+            margin-bottom: 20px;
+            opacity: 0;
+            transform: translateY(-20px);
+            animation: fadeInDown 0.5s forwards;
+        }
+
+        .winner-name {
+            font-size: 48px;
+            margin: 10px 0;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.5s 0.2s forwards;
+            font-weight: bold;
+        }
+
+        .winner-id {
+            font-size: 24px;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.5s 0.4s forwards;
+        }
+
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .participant-count {
+            font-size: 20px;
+            color: #666;
+            text-align: center;
+            margin: 20px 0;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        @keyframes fadeInDown {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes confettiFall {
+            0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+
         .back-btn {
             display: inline-block;
             padding: 10px 20px;
-            background: #4a6cf7;
-            color: white;
+            background: rgba(66, 133, 244, 0.1);
+            color: #4285f4;
             text-decoration: none;
             border-radius: 25px;
             margin: 10px;
             transition: all 0.3s ease;
         }
+
         .back-btn:hover {
-            background: #6e8efb;
+            background: rgba(66, 133, 244, 0.2);
             transform: translateY(-2px);
         }
-        .winner-title {
-            font-size: 28px;
-            margin-bottom: 15px;
-            animation: bounceIn 1s;
+
+        .google-btn {
+            background: #4285f4;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 20px auto;
+            transition: all 0.3s ease;
         }
-        .winner-name {
-            font-size: 36px;
-            margin: 15px 0;
-            animation: bounceIn 1s 0.2s;
-            font-weight: bold;
+
+        .google-btn:hover {
+            background: #357abd;
+            transform: translateY(-2px);
         }
-        .winner-id {
-            font-size: 24px;
-            animation: bounceIn 1s 0.4s;
+
+        #loginMessage {
+            color: #f44336;
+            margin-top: 10px;
+            display: none;
         }
-        .confetti {
-            position: fixed;
-            width: 10px;
-            height: 10px;
-            animation: confettiFall linear forwards;
+
+        .logout-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-left: auto;
+            transition: all 0.3s ease;
         }
-        @keyframes confettiFall {
-            0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
-            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
-        }
-        @keyframes bounceIn {
-            0% { opacity: 0; transform: scale(0.3); }
-            50% { opacity: 0.9; transform: scale(1.1); }
-            80% { opacity: 1; transform: scale(0.9); }
-            100% { opacity: 1; transform: scale(1); }
-        }
-        @keyframes fadeIn {
-            0% { opacity: 0; transform: translateY(-20px); }
-            100% { opacity: 1; transform: translateY(0); }
+
+        .logout-btn:hover {
+            background: #c82333;
         }
     </style>
 </head>
 <body>
+    <div id="loginSection">
+        <div class="login-box">
+            <h2>럭키드로우 추첨</h2>
+            <p>Korean Air 이메일로 로그인해주세요</p>
+            <button onclick="googleLogin()" class="google-btn">
+                <img src="https://www.google.com/favicon.ico" width="20" height="20" alt="Google">
+                Google로 로그인
+            </button>
+            <div id="loginMessage"></div>
+        </div>
+    </div>
+
     <div class="container">
+        <div class="user-info">
+            <img id="userPhoto" alt="프로필">
+            <span id="userName"></span>
+            <button onclick="logout()" class="logout-btn">로그아웃</button>
+        </div>
+
         <a href="admin.html" class="back-btn">← 관리자 페이지로</a>
         
         <h1 class="title">럭키드로우 추첨</h1>
         
-        <div id="participant-count" class="participant-count">
+        <div class="participant-count" id="participant-count">
             참가자 수 확인 중...
         </div>
 
@@ -150,13 +279,12 @@
 
         <div id="countdown"></div>
 
-        <button id="drawButton" onclick="startDraw()">
+        <button class="draw-button" id="drawButton" onclick="startDraw()">
             🎲 추첨 시작 🎲
         </button>
     </div>
 
     <script>
-        // Firebase 초기화
         const firebaseConfig = {
             apiKey: "AIzaSyCTozqFqNkT0EnnwJgD5q27hN7dYK9Oz2Q",
             authDomain: "lucky-draw-70d93.firebaseapp.com",
@@ -170,15 +298,62 @@
 
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
-        
+        const auth = firebase.auth();
+
         let participants = {};
         let isDrawing = false;
 
-        // 참가자 목록 실시간 업데이트
-        database.ref('participants').on('value', (snapshot) => {
-            participants = snapshot.val() || {};
-            updateParticipantCount();
+        async function googleLogin() {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            try {
+                const result = await auth.signInWithPopup(provider);
+                const email = result.user.email;
+                if (!email.endsWith('@koreanair.com')) {
+                    await auth.signOut();
+                    document.getElementById('loginMessage').textContent = 
+                        'Korean Air 이메일로만 로그인 가능합니다.';
+                    document.getElementById('loginMessage').style.display = 'block';
+                    return;
+                }
+                showApp();
+            } catch (error) {
+                console.error('Login Error:', error);
+                document.getElementById('loginMessage').textContent = 
+                    '로그인 중 오류가 발생했습니다.';
+                document.getElementById('loginMessage').style.display = 'block';
+            }
+        }
+
+        async function logout() {
+            try {
+                await auth.signOut();
+                location.reload();
+            } catch (error) {
+                console.error('Logout Error:', error);
+            }
+        }
+
+        function showApp() {
+            const user = auth.currentUser;
+            document.getElementById('loginSection').style.display = 'none';
+            document.querySelector('.container').style.display = 'block';
+            document.getElementById('userPhoto').src = user.photoURL || 'https://www.gravatar.com/avatar/?d=mp';
+            document.getElementById('userName').textContent = user.email;
+            loadParticipants();
+        }
+
+        auth.onAuthStateChanged((user) => {
+            if (user && user.email.endsWith('@koreanair.com')) {
+                showApp();
+            }
         });
+
+        function loadParticipants() {
+            database.ref('participants').on('value', (snapshot) => {
+                participants = snapshot.val() || {};
+                updateParticipantCount();
+            });
+        }
 
         function updateParticipantCount() {
             const count = Object.keys(participants).length;
@@ -196,7 +371,6 @@
                 confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
                 confetti.style.animation = `confettiFall ${1 + Math.random() * 2}s linear forwards`;
                 document.body.appendChild(confetti);
-
                 setTimeout(() => confetti.remove(), 5000);
             }
         }
@@ -227,26 +401,29 @@
             countdown();
         }
 
-        function selectWinner() {
+        async function selectWinner() {
             const keys = Object.keys(participants);
             const winnerKey = keys[Math.floor(Math.random() * keys.length)];
             const winner = participants[winnerKey];
 
             const winnerDisplay = document.getElementById('winner-display');
             winnerDisplay.innerHTML = `
-                <div>
-                    <div class="winner-title">🎉 축하합니다! 🎉</div>
-                    <div class="winner-name">${winner.name}</div>
-                    <div class="winner-id">${winner.empId}</div>
-                </div>
+                <div class="winner-title">🎉 축하합니다! 🎉</div>
+                <div class="winner-name">${winner.name}</div>
+                <div class="winner-id">${winner.empId}</div>
             `;
 
             createConfetti();
 
-            // 당첨자 제거
-            database.ref(`participants/${winnerKey}`).remove();
-            
-            isDrawing = false;
+            try {
+                await database.ref(`participants/${winnerKey}`).remove();
+                isDrawing = false;
+            } catch (error) {
+                console.error('Error removing winner:', error);
+                alert('당첨자 제거 중 오류가 발생했습니다.');
+                isDrawing = false;
+                button.disabled = false;
+            }
         }
     </script>
 </body>
