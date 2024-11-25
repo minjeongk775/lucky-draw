@@ -7,11 +7,10 @@
     <style>
         body {
             font-family: 'Arial', sans-serif;
-            text-align: center;
-            padding: 20px;
-            background-color: #f0f2f5;
-            min-height: 100vh;
+            background-color: #ffffff;
             margin: 0;
+            padding: 20px;
+            color: #333;
         }
         .container {
             max-width: 500px;
@@ -24,53 +23,67 @@
             border-radius: 15px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
+        .title {
+            color: #4a6cf7;
+            font-size: 28px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
         .input-group {
             margin: 20px 0;
         }
         input {
-            width: 80%;
+            width: 100%;
             padding: 12px;
             margin: 8px 0;
             border: 1px solid #ddd;
             border-radius: 8px;
             font-size: 16px;
+            box-sizing: border-box;
         }
         button {
+            width: 100%;
             background: #4a6cf7;
             color: white;
             border: none;
-            padding: 15px 30px;
-            font-size: 1.1em;
-            border-radius: 50px;
+            padding: 15px;
+            font-size: 18px;
+            border-radius: 8px;
             cursor: pointer;
-            margin: 20px 0;
+            margin-top: 20px;
             transition: all 0.3s ease;
         }
         button:hover {
+            background: #6e8efb;
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(74, 108, 247, 0.3);
         }
         .success-message {
-            color: #4CAF50;
-            padding: 10px;
-            margin: 10px 0;
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
             display: none;
+            text-align: center;
         }
         .error-message {
-            color: #f44336;
-            padding: 10px;
-            margin: 10px 0;
+            background-color: #f44336;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
             display: none;
+            text-align: center;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="register-form">
-            <h1>럭키드로우 참가 등록</h1>
+            <h1 class="title">럭키드로우 참가 등록</h1>
             <div class="input-group">
-                <input type="text" id="name" placeholder="이름을 입력하세요">
-                <input type="text" id="empId" placeholder="사번을 입력하세요">
+                <input type="text" id="name" placeholder="이름을 입력하세요" autocomplete="off">
+                <input type="text" id="empId" placeholder="사번을 입력하세요" autocomplete="off">
             </div>
             <button onclick="registerParticipant()">등록하기</button>
             <div id="successMessage" class="success-message">
@@ -83,9 +96,9 @@
     </div>
 
     <script>
-        let participants = JSON.parse(localStorage.getItem('participants') || '[]');
+        const GIST_ID = '7fc47be60fc04fdba67e0d34fbd3ba13';
 
-        function registerParticipant() {
+        async function registerParticipant() {
             const name = document.getElementById('name').value.trim();
             const empId = document.getElementById('empId').value.trim();
             const successMsg = document.getElementById('successMessage');
@@ -100,19 +113,65 @@
                 return;
             }
 
-            if (participants.some(p => p.empId === empId)) {
-                errorMsg.textContent = '이미 등록된 사번입니다.';
+            try {
+                // 현재 참가자 목록 가져오기
+                const response = await fetch(`https://api.github.com/gists/${GIST_ID}`);
+                const gist = await response.json();
+                const content = JSON.parse(gist.files['participants.json'].content);
+                const participants = content.participants || [];
+
+                // 중복 확인
+                if (participants.some(p => p.empId === empId)) {
+                    errorMsg.textContent = '이미 등록된 사번입니다.';
+                    errorMsg.style.display = 'block';
+                    return;
+                }
+
+                // 새 참가자 추가
+                participants.push({
+                    name,
+                    empId,
+                    timestamp: new Date().toISOString()
+                });
+
+                // Gist 업데이트
+                const updateResponse = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        files: {
+                            'participants.json': {
+                                content: JSON.stringify({ participants }, null, 2)
+                            }
+                        }
+                    })
+                });
+
+                if (updateResponse.ok) {
+                    document.getElementById('name').value = '';
+                    document.getElementById('empId').value = '';
+                    successMsg.style.display = 'block';
+                    setTimeout(() => {
+                        successMsg.style.display = 'none';
+                    }, 3000);
+                } else {
+                    throw new Error('등록 실패');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                errorMsg.textContent = '등록 중 오류가 발생했습니다. 다시 시도해주세요.';
                 errorMsg.style.display = 'block';
-                return;
             }
-
-            participants.push({ name, empId, timestamp: new Date().toISOString() });
-            localStorage.setItem('participants', JSON.stringify(participants));
-
-            document.getElementById('name').value = '';
-            document.getElementById('empId').value = '';
-            successMsg.style.display = 'block';
         }
+
+        // 엔터 키로 등록
+        document.getElementById('empId').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                registerParticipant();
+            }
+        });
     </script>
 </body>
 </html>
