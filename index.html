@@ -4,86 +4,99 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>럭키드로우 참가 등록</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
     <style>
-        body {
-            font-family: 'Arial', sans-serif;
-            background-color: #ffffff;
-            margin: 0;
-            padding: 20px;
-            color: #333;
+        /* 기존 스타일 유지 */
+        #loginSection {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .login-box {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+        .user-info {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .user-info img {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+        }
+        .google-btn {
+            background: #4285f4;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .google-btn:hover {
+            background: #357abd;
         }
         .container {
-            max-width: 500px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        .register-form {
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        .title {
-            color: #4a6cf7;
-            font-size: 28px;
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .input-group {
-            margin: 20px 0;
-        }
-        input {
-            width: 100%;
-            padding: 12px;
-            margin: 8px 0;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 16px;
-            box-sizing: border-box;
-        }
-        button {
-            width: 100%;
-            background: #4a6cf7;
-            color: white;
-            border: none;
-            padding: 15px;
-            font-size: 18px;
-            border-radius: 8px;
-            cursor: pointer;
-            margin-top: 20px;
-            transition: all 0.3s ease;
-        }
-        button:hover {
-            background: #6e8efb;
-            transform: translateY(-2px);
-        }
-        .success-message {
-            background-color: #4CAF50;
-            color: white;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 20px;
             display: none;
-            text-align: center;
         }
-        .error-message {
-            background-color: #f44336;
-            color: white;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 20px;
+        #loginMessage {
+            color: #f44336;
+            margin-top: 10px;
             display: none;
-            text-align: center;
         }
     </style>
 </head>
 <body>
+    <div id="loginSection">
+        <div class="login-box">
+            <h2>로그인</h2>
+            <p>Korean Air 이메일로 로그인해주세요</p>
+            <button onclick="googleLogin()" class="google-btn">
+                <img src="https://www.google.com/favicon.ico" width="20" height="20">
+                Google로 로그인
+            </button>
+            <div id="loginMessage"></div>
+        </div>
+    </div>
+
     <div class="container">
+        <div class="user-info">
+            <img id="userPhoto" src="" alt="프로필">
+            <span id="userName"></span>
+            <button onclick="logout()" style="margin-left: 10px">로그아웃</button>
+        </div>
+
         <div class="register-form">
             <h1 class="title">럭키드로우 참가 등록</h1>
             <div class="input-group">
-                <input type="text" id="name" placeholder="이름을 입력하세요" autocomplete="off">
-                <input type="text" id="empId" placeholder="사번을 입력하세요" autocomplete="off">
+                <input type="text" id="name" placeholder="이름을 입력하세요">
+                <input type="text" id="empId" placeholder="사번을 입력하세요">
             </div>
             <button onclick="registerParticipant()">등록하기</button>
             <div id="successMessage" class="success-message">
@@ -96,82 +109,71 @@
     </div>
 
     <script>
-        const GIST_ID = '7fc47be60fc04fdba67e0d34fbd3ba13';
+        const firebaseConfig = {
+            apiKey: "AIzaSyCTozqFqNkT0EnnwJgD5q27hN7dYK9Oz2Q",
+            authDomain: "lucky-draw-70d93.firebaseapp.com",
+            projectId: "lucky-draw-70d93",
+            storageBucket: "lucky-draw-70d93.firebasestorage.app",
+            messagingSenderId: "524573105650",
+            appId: "1:524573105650:web:9f593c44ca86fcb5381f6b",
+            measurementId: "G-ZGE04HQ2QM",
+            databaseURL: "https://lucky-draw-70d93-default-rtdb.firebaseio.com/"
+        };
 
-        async function registerParticipant() {
-            const name = document.getElementById('name').value.trim();
-            const empId = document.getElementById('empId').value.trim();
-            const successMsg = document.getElementById('successMessage');
-            const errorMsg = document.getElementById('errorMessage');
-            
-            successMsg.style.display = 'none';
-            errorMsg.style.display = 'none';
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        const auth = firebase.auth();
 
-            if (!name || !empId) {
-                errorMsg.textContent = '이름과 사번을 모두 입력해주세요.';
-                errorMsg.style.display = 'block';
-                return;
-            }
-
+        // Google 로그인
+        async function googleLogin() {
+            const provider = new firebase.auth.GoogleAuthProvider();
             try {
-                // 현재 참가자 목록 가져오기
-                const response = await fetch(`https://api.github.com/gists/${GIST_ID}`);
-                const gist = await response.json();
-                const content = JSON.parse(gist.files['participants.json'].content);
-                const participants = content.participants || [];
-
-                // 중복 확인
-                if (participants.some(p => p.empId === empId)) {
-                    errorMsg.textContent = '이미 등록된 사번입니다.';
-                    errorMsg.style.display = 'block';
+                const result = await auth.signInWithPopup(provider);
+                const email = result.user.email;
+                if (!email.endsWith('@koreanair.com')) {
+                    await auth.signOut();
+                    document.getElementById('loginMessage').textContent = 
+                        'Korean Air 이메일로만 로그인 가능합니다.';
+                    document.getElementById('loginMessage').style.display = 'block';
                     return;
                 }
-
-                // 새 참가자 추가
-                participants.push({
-                    name,
-                    empId,
-                    timestamp: new Date().toISOString()
-                });
-
-                // Gist 업데이트
-                const updateResponse = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        files: {
-                            'participants.json': {
-                                content: JSON.stringify({ participants }, null, 2)
-                            }
-                        }
-                    })
-                });
-
-                if (updateResponse.ok) {
-                    document.getElementById('name').value = '';
-                    document.getElementById('empId').value = '';
-                    successMsg.style.display = 'block';
-                    setTimeout(() => {
-                        successMsg.style.display = 'none';
-                    }, 3000);
-                } else {
-                    throw new Error('등록 실패');
-                }
+                showApp();
             } catch (error) {
-                console.error('Error:', error);
-                errorMsg.textContent = '등록 중 오류가 발생했습니다. 다시 시도해주세요.';
-                errorMsg.style.display = 'block';
+                console.error('Login Error:', error);
+                document.getElementById('loginMessage').textContent = 
+                    '로그인 중 오류가 발생했습니다.';
+                document.getElementById('loginMessage').style.display = 'block';
             }
         }
 
-        // 엔터 키로 등록
-        document.getElementById('empId').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                registerParticipant();
+        // 로그아웃
+        async function logout() {
+            try {
+                await auth.signOut();
+                location.reload();
+            } catch (error) {
+                console.error('Logout Error:', error);
+            }
+        }
+
+        // 앱 표시
+        function showApp() {
+            const user = auth.currentUser;
+            document.getElementById('loginSection').style.display = 'none';
+            document.querySelector('.container').style.display = 'block';
+            document.getElementById('userPhoto').src = user.photoURL;
+            document.getElementById('userName').textContent = user.email;
+        }
+
+        // 인증 상태 변경 감지
+        auth.onAuthStateChanged((user) => {
+            if (user && user.email.endsWith('@koreanair.com')) {
+                showApp();
             }
         });
+
+        // 기존의 registerParticipant 함수는 유지...
+
     </script>
 </body>
 </html>
