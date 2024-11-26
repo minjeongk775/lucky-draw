@@ -49,26 +49,26 @@
             padding: 40px;
             border-radius: 15px;
             margin: 20px 0;
-            min-height: 200px;
+            min-height: 300px; /* 높이 증가 */
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             text-align: center;
             box-shadow: 0 4px 15px rgba(66, 133, 244, 0.3);
-            font-size: 24px;
             position: relative;
             overflow: hidden;
         }
-        .roulette-container {
-            height: 100px;
-            line-height: 100px;
-            font-size: 60px;
+        #roulette {
+            font-size: 120px; /* 매우 큰 폰트 사이즈 */
             font-weight: bold;
             color: white;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-            overflow: hidden;
-            position: relative;
+            text-shadow: 2px 2px 10px rgba(0,0,0,0.3);
+            height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: font-size 0.3s ease;
         }
         .draw-button {
             background: #4a6cf7;
@@ -117,13 +117,6 @@
             background: rgba(66, 133, 244, 0.2);
             transform: translateY(-2px);
         }
-        .winner-number {
-            font-size: 72px;
-            font-weight: bold;
-            margin: 20px 0;
-            text-shadow: 3px 3px 6px rgba(0,0,0,0.3);
-            animation: popIn 0.5s ease-out;
-        }
         .confetti {
             position: fixed;
             width: 10px;
@@ -131,19 +124,17 @@
             opacity: 0;
             pointer-events: none;
         }
-        @keyframes popIn {
-            0% { transform: scale(0.5); opacity: 0; }
-            70% { transform: scale(1.2); opacity: 0.8; }
-            100% { transform: scale(1); opacity: 1; }
-        }
         @keyframes confettiFall {
             0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
             100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
         }
-        @keyframes numberFlash {
-            0% { opacity: 0.3; }
-            50% { opacity: 1; }
-            100% { opacity: 0.3; }
+        .winning-number {
+            animation: winningPulse 2s infinite;
+        }
+        @keyframes winningPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
         }
     </style>
 </head>
@@ -152,7 +143,6 @@
         <h2 class="title">관리자 로그인</h2>
         <input type="password" id="password" placeholder="관리자 비밀번호를 입력하세요">
         <button onclick="checkPassword()" class="draw-button">로그인</button>
-        <div id="loginError" class="message error-message"></div>
     </div>
 
     <div class="container">
@@ -165,8 +155,8 @@
         </div>
 
         <div id="winner-display">
-            <div class="roulette-container" id="roulette">
-                추첨 시작 버튼 클릭
+            <div id="roulette">
+                시작하세요
             </div>
         </div>
 
@@ -240,19 +230,18 @@
             const roulette = document.getElementById('roulette');
             button.disabled = true;
             
+            // 참가자 배열 생성
             const participantArray = Object.entries(participants);
             const winner = participantArray[Math.floor(Math.random() * participantArray.length)];
             
-            let speed = 50;  // 초기 속도 (밀리초)
+            let speed = 20;  // 초기 속도 (더 빠르게)
             let duration = 0;
-            const maxDuration = 3000;  // 총 지속시간 (밀리초)
+            const maxDuration = 4000;  // 총 지속시간
 
             function updateRoulette() {
                 if (duration >= maxDuration) {
                     // 당첨자 표시
-                    roulette.innerHTML = `
-                        <div class="winner-number">${winner[1].empId}</div>
-                    `;
+                    roulette.innerHTML = `<div class="winning-number">${winner[1].empId}</div>`;
                     createConfetti();
                     
                     // 당첨자 제거
@@ -262,12 +251,12 @@
                     return;
                 }
 
-                // 임의의 사번 생성 및 표시
-                const randomEmpId = Math.floor(Math.random() * 900000 + 100000);
-                roulette.textContent = randomEmpId;
+                // 등록된 사번 중에서만 랜덤 선택
+                const randomParticipant = participantArray[Math.floor(Math.random() * participantArray.length)];
+                roulette.textContent = randomParticipant[1].empId;
                 
-                // 속도 조절
-                speed = Math.min(200, 50 + (duration / maxDuration) * 150);
+                // 속도 조절 (시간이 지날수록 점점 느리게)
+                speed = Math.min(500, 20 + (duration / maxDuration) * 480);
                 duration += speed;
 
                 setTimeout(updateRoulette, speed);
@@ -276,7 +265,6 @@
             updateRoulette();
         }
 
-        // 엔터 키로 로그인
         document.getElementById('password').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 checkPassword();
