@@ -1,38 +1,424 @@
-async function selectWinner() {
-    try {
-        // 랜덤성 강화
-        const shuffleArray = (array) => {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
-            }
-            return array;
-        };
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>럭키드로우 추첨</title>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            min-height: 100vh;
+        }
+        #loginSection {
+            max-width: 400px;
+            margin: 100px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            display: none;
+        }
+        .title {
+            color: #4a6cf7;
+            font-size: 36px;
+            text-align: center;
+            margin: 30px 0;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        #winner-display {
+            background: linear-gradient(135deg, #4285f4, #6e8efb);
+            color: white;
+            padding: 40px;
+            border-radius: 15px;
+            margin: 20px 0;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(66, 133, 244, 0.3);
+            font-size: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+        #countdown {
+            font-size: 120px;
+            color: #4285f4;
+            height: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-shadow: 0 2px 10px rgba(66, 133, 244, 0.2);
+            font-weight: bold;
+            margin: 20px 0;
+            transition: transform 0.2s ease;
+        }
+        .draw-button {
+            background: #4a6cf7;
+            color: white;
+            border: none;
+            padding: 20px 60px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 24px;
+            margin: 20px auto;
+            display: block;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(66, 133, 244, 0.3);
+        }
+        .draw-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(74, 108, 247, 0.4);
+        }
+        .draw-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .participant-count {
+            font-size: 20px;
+            color: #666;
+            text-align: center;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .back-btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: rgba(66, 133, 244, 0.1);
+            color: #4285f4;
+            text-decoration: none;
+            border-radius: 25px;
+            margin: 10px;
+            transition: all 0.3s ease;
+        }
+        .back-btn:hover {
+            background: rgba(66, 133, 244, 0.2);
+            transform: translateY(-2px);
+        }
+        .winner-title {
+            font-size: 32px;
+            margin-bottom: 20px;
+            animation: fadeInDown 0.5s forwards;
+        }
+        .winner-name {
+            font-size: 48px;
+            margin: 10px 0;
+            font-weight: bold;
+            animation: fadeInUp 0.5s 0.2s forwards;
+        }
+        .winner-id {
+            font-size: 24px;
+            animation: fadeInUp 0.5s 0.4s forwards;
+        }
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            opacity: 0;
+            pointer-events: none;
+        }
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes confettiFall {
+            0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+        .message {
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 5px;
+            display: none;
+        }
+        .error-message {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+        .spinning {
+            animation: spin 2s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div id="loginSection">
+        <h2 class="title">관리자 로그인</h2>
+        <input type="password" id="password" placeholder="관리자 비밀번호를 입력하세요">
+        <button onclick="checkPassword()" class="draw-button">로그인</button>
+        <div id="loginError" class="message error-message"></div>
+    </div>
 
-        // 참가자 목록을 배열로 변환 후 섞기
-        const participantArray = Object.entries(participants);
-        const shuffledParticipants = shuffleArray(participantArray);
+    <div class="container">
+        <a href="admin.html" class="back-btn">← 관리자 페이지로</a>
         
-        // 현재 시간을 시드로 사용하여 추가 랜덤성 부여
-        const seed = Date.now() % shuffledParticipants.length;
-        const winnerIndex = Math.floor(Math.random() * seed * Math.random() * shuffledParticipants.length);
-        const [winnerKey, winner] = shuffledParticipants[winnerIndex % shuffledParticipants.length];
+        <h1 class="title">럭키드로우 추첨</h1>
+        
+        <div class="participant-count" id="participant-count">
+            참가자 수 확인 중...
+        </div>
 
-        const winnerDisplay = document.getElementById('winner-display');
-        winnerDisplay.innerHTML = `
-            <div class="winner-title">🎉 축하합니다! 🎉</div>
-            <div class="winner-name">${winner.name}</div>
-            <div class="winner-id">${winner.empId}</div>
-        `;
+        <div id="winner-display">
+            당첨자가 곧 공개됩니다!
+        </div>
 
-        createConfetti();
+        <div id="countdown"></div>
 
-        await database.ref(`participants/${winnerKey}`).remove();
-        isDrawing = false;
+        <button class="draw-button" id="drawButton" onclick="startDraw()">
+            🎲 추첨 시작 🎲
+        </button>
+    </div>
+</body>
+</html>
 
-    } catch (error) {
-        console.error('Error in selectWinner:', error);
-        alert('당첨자 선정 중 오류가 발생했습니다.');
-        isDrawing = false;
+<script>
+    // Firebase 설정
+    const firebaseConfig = {
+        apiKey: "AIzaSyCTozqFqNkT0EnnwJgD5q27hN7dYK9Oz2Q",
+        authDomain: "lucky-draw-70d93.firebaseapp.com",
+        projectId: "lucky-draw-70d93",
+        storageBucket: "lucky-draw-70d93.firebasestorage.app",
+        messagingSenderId: "524573105650",
+        appId: "1:524573105650:web:9f593c44ca86fcb5381f6b",
+        measurementId: "G-ZGE04HQ2QM",
+        databaseURL: "https://lucky-draw-70d93-default-rtdb.firebaseio.com/"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+    const ADMIN_PASSWORD = "1234";
+    
+    let participants = {};
+    let isDrawing = false;
+
+    // 비밀번호 확인
+    function checkPassword() {
+        const password = document.getElementById('password').value;
+        const loginError = document.getElementById('loginError');
+        
+        if (password === ADMIN_PASSWORD) {
+            document.getElementById('loginSection').style.display = 'none';
+            document.querySelector('.container').style.display = 'block';
+            loadParticipants();
+            loginError.style.display = 'none';
+        } else {
+            loginError.textContent = '비밀번호가 올바르지 않습니다.';
+            loginError.style.display = 'block';
+        }
     }
-}
+
+    // 참가자 목록 로드
+    function loadParticipants() {
+        database.ref('participants').on('value', (snapshot) => {
+            participants = snapshot.val() || {};
+            updateParticipantCount();
+        });
+    }
+
+    // 참가자 수 업데이트
+    function updateParticipantCount() {
+        const count = Object.keys(participants).length;
+        document.getElementById('participant-count').textContent = 
+            `현재 참가자 수: ${count}명`;
+        document.getElementById('drawButton').disabled = count === 0;
+    }
+
+    // 폭죽 효과 생성
+    function createConfetti() {
+        const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96f7d2', '#f7d794', '#ff9ff3'];
+        for (let i = 0; i < 150; i++) {
+            const confetti = document.createElement('div');
+            confetti.className = 'confetti';
+            confetti.style.left = Math.random() * 100 + 'vw';
+            confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            confetti.style.animation = `confettiFall ${1.5 + Math.random() * 2}s linear forwards`;
+            confetti.style.animationDelay = Math.random() * 3 + 's';
+            document.body.appendChild(confetti);
+            setTimeout(() => confetti.remove(), 5000);
+        }
+    }
+
+    // 숫자 섞기 함수
+    function shuffleNumber(num) {
+        return parseInt(num.toString().split('').sort(() => Math.random() - 0.5).join(''));
+    }
+
+    // 추첨 시작
+    function startDraw() {
+        if (Object.keys(participants).length === 0 || isDrawing) return;
+        isDrawing = true;
+
+        const button = document.getElementById('drawButton');
+        const countdownElement = document.getElementById('countdown');
+        button.disabled = true;
+
+        let count = 3;
+        function countdown() {
+            if (count > 0) {
+                countdownElement.textContent = count;
+                countdownElement.classList.add('spinning');
+                setTimeout(() => {
+                    countdownElement.classList.remove('spinning');
+                }, 500);
+                count--;
+                // 추가 랜덤성을 위해 시간 간격도 약간 랜덤하게
+                setTimeout(countdown, 800 + Math.random() * 400);
+            } else {
+                countdownElement.textContent = '';
+                selectWinner();
+            }
+        }
+        countdown();
+    }
+
+    // 엔터 키로 로그인
+    document.getElementById('password').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            checkPassword();
+        }
+    });
+</script>
+
+<script>
+    // 랜덤성을 강화한 선정 함수
+    async function selectWinner() {
+        try {
+            // 1. 현재 시간을 기반으로 한 시드 생성
+            const timeSeed = Date.now() % 10000;
+            
+            // 2. 참가자 배열 생성 및 셔플
+            const participantArray = Object.entries(participants);
+            const shuffledParticipants = shuffleArray(participantArray);
+            
+            // 3. 추가 랜덤 요소 생성
+            const randomSeed = Math.floor(Math.random() * 1000);
+            const combinedSeed = (timeSeed + randomSeed) % shuffledParticipants.length;
+            
+            // 4. 다중 셔플 적용
+            for (let i = 0; i < 3; i++) {
+                shuffleArray(shuffledParticipants);
+            }
+            
+            // 5. 최종 당첨자 선정
+            const finalIndex = Math.floor(
+                (combinedSeed * Math.random() * shuffledParticipants.length) % 
+                shuffledParticipants.length
+            );
+            
+            const [winnerKey, winner] = shuffledParticipants[finalIndex];
+
+            // 당첨자 표시 애니메이션
+            const winnerDisplay = document.getElementById('winner-display');
+            
+            // 드럼롤 효과
+            winnerDisplay.innerHTML = `<div class="winner-title">🎯 추첨중...</div>`;
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // 당첨자 발표
+            winnerDisplay.innerHTML = `
+                <div class="winner-title">🎉 축하합니다! 🎉</div>
+                <div class="winner-name">${winner.name}</div>
+                <div class="winner-id">${winner.empId}</div>
+            `;
+
+            // 특수 효과
+            createConfetti();
+            createSparkles(winnerDisplay);
+
+            // 당첨자 제거
+            await database.ref(`participants/${winnerKey}`).remove();
+            
+            // 상태 초기화
+            isDrawing = false;
+            document.getElementById('drawButton').disabled = 
+                Object.keys(participants).length === 0;
+
+        } catch (error) {
+            console.error('Error in selectWinner:', error);
+            alert('당첨자 선정 중 오류가 발생했습니다.');
+            isDrawing = false;
+            document.getElementById('drawButton').disabled = false;
+        }
+    }
+
+    // Fisher-Yates 셔플 알고리즘
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            // 이중 랜덤 계수 적용
+            const r1 = Math.random();
+            const r2 = Math.random();
+            const j = Math.floor((r1 * r2) * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
+
+    // 반짝이는 효과 생성
+    function createSparkles(element) {
+        const colors = ['#fff', '#fff9c4', '#ffecb3'];
+        for (let i = 0; i < 30; i++) {
+            const sparkle = document.createElement('div');
+            sparkle.style.position = 'absolute';
+            sparkle.style.width = '4px';
+            sparkle.style.height = '4px';
+            sparkle.style.borderRadius = '50%';
+            sparkle.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            sparkle.style.left = Math.random() * 100 + '%';
+            sparkle.style.top = Math.random() * 100 + '%';
+            sparkle.style.animation = `sparkle ${0.5 + Math.random()}s infinite`;
+            element.appendChild(sparkle);
+
+            setTimeout(() => sparkle.remove(), 5000);
+        }
+    }
+
+    // 엔트로피 추가 함수
+    function addEntropy() {
+        const entropy = [];
+        for (let i = 0; i < 10; i++) {
+            entropy.push(Math.random() * Date.now());
+        }
+        return entropy.reduce((a, b) => a + b, 0) % 1;
+    }
+
+    // 랜덤성 강화를 위한 추가 스타일
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes sparkle {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.5; }
+        }
+    `;
+    document.head.appendChild(style);
+</script>
