@@ -4,114 +4,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>럭키드로우 참가 등록</title>
-    <meta name="robots" content="noindex, nofollow">
-    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
     <style>
         body {
             font-family: 'Arial', sans-serif;
             margin: 0;
-            padding: 0;
+            padding: 20px;
             background-color: #f5f5f5;
         }
-
-        #loginSection {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.8);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-        }
-
-        .login-box {
-            background: white;
-            padding: 40px;
-            border-radius: 15px;
-            text-align: center;
-            max-width: 400px;
-            width: 90%;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        .login-box h2 {
-            margin: 0 0 20px 0;
-            color: #333;
-        }
-
-        .login-box p {
-            color: #666;
-            margin-bottom: 20px;
-        }
-
-        .google-btn {
-            background: #4285f4;
-            color: white;
-            padding: 12px 24px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin: 0 auto;
-            transition: all 0.3s ease;
-        }
-
-        .google-btn:hover {
-            background: #357abd;
-            transform: translateY(-2px);
-        }
-
         .container {
-            max-width: 600px;
+            max-width: 500px;
             margin: 40px auto;
             padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        #loginSection, #registerSection {
+            text-align: center;
+        }
+        #registerSection {
             display: none;
         }
-
-        .user-info {
-            background: white;
-            padding: 15px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        .user-info img {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-        }
-
-        .register-form {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
         .title {
-            color: #4285f4;
-            text-align: center;
-            margin-bottom: 30px;
+            color: #4a6cf7;
             font-size: 24px;
-        }
-
-        .input-group {
             margin-bottom: 20px;
         }
-
         input {
             width: 100%;
             padding: 12px;
@@ -121,97 +41,54 @@
             box-sizing: border-box;
             font-size: 16px;
         }
-
-        input:focus {
-            outline: none;
-            border-color: #4285f4;
-            box-shadow: 0 0 5px rgba(66, 133, 244, 0.3);
-        }
-
         button {
-            background: #4285f4;
+            background: #4a6cf7;
             color: white;
             border: none;
             padding: 12px 20px;
             border-radius: 5px;
             cursor: pointer;
             font-size: 16px;
-            transition: all 0.3s ease;
-        }
-
-        button:hover {
-            background: #357abd;
-            transform: translateY(-2px);
-        }
-
-        button:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .message {
-            padding: 15px;
-            border-radius: 5px;
-            margin-top: 15px;
-            display: none;
-        }
-
-        .success-message {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .error-message {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-
-        #loginMessage {
-            color: #f44336;
+            width: 100%;
             margin-top: 10px;
+        }
+        button:hover {
+            background: #3a5bd7;
+        }
+        .message {
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 5px;
             display: none;
         }
-
-        .logout-btn {
-            background: #dc3545;
-            margin-left: auto;
+        .error-message {
+            background-color: #ffebee;
+            color: #c62828;
         }
-
-        .logout-btn:hover {
-            background: #c82333;
+        .success-message {
+            background-color: #e8f5e9;
+            color: #2e7d32;
         }
     </style>
 </head>
 <body>
-    <div id="loginSection">
-        <div class="login-box">
-            <h2>럭키드로우 참가 등록</h2>
-            <p>Korean Air 이메일로 로그인해주세요</p>
-            <button onclick="googleLogin()" class="google-btn">
-                <img src="https://www.google.com/favicon.ico" width="20" height="20" alt="Google">
-                Google로 로그인
-            </button>
-            <div id="loginMessage"></div>
-        </div>
-    </div>
-
     <div class="container">
-        <div class="user-info">
-            <img id="userPhoto" alt="프로필">
-            <span id="userName"></span>
-            <button onclick="logout()" class="logout-btn">로그아웃</button>
+        <!-- 로그인 섹션 -->
+        <div id="loginSection">
+            <h2 class="title">럭키드로우 접속</h2>
+            <input type="password" id="password" placeholder="비밀번호를 입력하세요">
+            <button onclick="checkPassword()">입장하기</button>
+            <div id="loginError" class="message error-message"></div>
         </div>
 
-        <div class="register-form">
-            <h1 class="title">럭키드로우 참가 등록</h1>
-            <div class="input-group">
-                <input type="text" id="name" placeholder="이름을 입력하세요" autocomplete="off">
-                <input type="text" id="empId" placeholder="사번을 입력하세요" autocomplete="off">
+        <!-- 등록 섹션 -->
+        <div id="registerSection">
+            <h2 class="title">참가자 등록</h2>
+            <div>
+                <input type="text" id="name" placeholder="이름을 입력하세요">
+                <input type="text" id="empId" placeholder="사번을 입력하세요">
+                <button onclick="registerParticipant()">등록하기</button>
             </div>
-            <button onclick="registerParticipant()" id="registerBtn">등록하기</button>
             <div id="successMessage" class="message success-message">
                 성공적으로 등록되었습니다!
             </div>
@@ -235,73 +112,38 @@
 
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
-        const auth = firebase.auth();
+        const PASSWORD = "2024";
 
-        async function googleLogin() {
-            const provider = new firebase.auth.GoogleAuthProvider();
-            try {
-                const result = await auth.signInWithPopup(provider);
-                const email = result.user.email;
-                if (!email.endsWith('@koreanair.com')) {
-                    await auth.signOut();
-                    document.getElementById('loginMessage').textContent = 
-                        'Korean Air 이메일로만 로그인 가능합니다.';
-                    document.getElementById('loginMessage').style.display = 'block';
-                    return;
-                }
-                showApp();
-            } catch (error) {
-                console.error('Login Error:', error);
-                document.getElementById('loginMessage').textContent = 
-                    '로그인 중 오류가 발생했습니다.';
-                document.getElementById('loginMessage').style.display = 'block';
+        function checkPassword() {
+            const password = document.getElementById('password').value;
+            const loginError = document.getElementById('loginError');
+            
+            if (password === PASSWORD) {
+                document.getElementById('loginSection').style.display = 'none';
+                document.getElementById('registerSection').style.display = 'block';
+                loginError.style.display = 'none';
+            } else {
+                loginError.textContent = '비밀번호가 올바르지 않습니다.';
+                loginError.style.display = 'block';
             }
         }
-
-        async function logout() {
-            try {
-                await auth.signOut();
-                location.reload();
-            } catch (error) {
-                console.error('Logout Error:', error);
-            }
-        }
-
-        function showApp() {
-            const user = auth.currentUser;
-            document.getElementById('loginSection').style.display = 'none';
-            document.querySelector('.container').style.display = 'block';
-            document.getElementById('userPhoto').src = user.photoURL || 'https://www.gravatar.com/avatar/?d=mp';
-            document.getElementById('userName').textContent = user.email;
-        }
-
-        auth.onAuthStateChanged((user) => {
-            if (user && user.email.endsWith('@koreanair.com')) {
-                showApp();
-            }
-        });
 
         async function registerParticipant() {
-            if (!auth.currentUser) {
-                alert('먼저 로그인해주세요.');
-                return;
-            }
-
             const name = document.getElementById('name').value.trim();
             const empId = document.getElementById('empId').value.trim();
             const successMsg = document.getElementById('successMessage');
             const errorMsg = document.getElementById('errorMessage');
-            const registerBtn = document.getElementById('registerBtn');
             
             successMsg.style.display = 'none';
             errorMsg.style.display = 'none';
-            registerBtn.disabled = true;
+
+            if (!name || !empId) {
+                errorMsg.textContent = '이름과 사번을 모두 입력해주세요.';
+                errorMsg.style.display = 'block';
+                return;
+            }
 
             try {
-                if (!name || !empId) {
-                    throw new Error('이름과 사번을 모두 입력해주세요.');
-                }
-
                 // 중복 확인
                 const snapshot = await database.ref('participants')
                     .orderByChild('empId')
@@ -309,20 +151,20 @@
                     .once('value');
 
                 if (snapshot.exists()) {
-                    throw new Error('이미 등록된 사번입니다.');
+                    errorMsg.textContent = '이미 등록된 사번입니다.';
+                    errorMsg.style.display = 'block';
+                    return;
                 }
 
                 // 새 참가자 등록
                 await database.ref('participants').push({
                     name: name,
                     empId: empId,
-                    timestamp: firebase.database.ServerValue.TIMESTAMP,
-                    registeredBy: auth.currentUser.email
+                    timestamp: firebase.database.ServerValue.TIMESTAMP
                 });
 
                 document.getElementById('name').value = '';
                 document.getElementById('empId').value = '';
-                successMsg.textContent = '성공적으로 등록되었습니다!';
                 successMsg.style.display = 'block';
                 setTimeout(() => {
                     successMsg.style.display = 'none';
@@ -330,12 +172,17 @@
 
             } catch (error) {
                 console.error('Error:', error);
-                errorMsg.textContent = error.message || '등록 중 오류가 발생했습니다.';
+                errorMsg.textContent = '등록 중 오류가 발생했습니다.';
                 errorMsg.style.display = 'block';
-            } finally {
-                registerBtn.disabled = false;
             }
         }
+
+        // 엔터 키로 비밀번호 입력
+        document.getElementById('password').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                checkPassword();
+            }
+        });
 
         // 엔터 키로 등록
         document.getElementById('empId').addEventListener('keypress', function(e) {
