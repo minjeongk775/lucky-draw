@@ -6,85 +6,208 @@
     <title>럭키드로우 추첨</title>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
-    <!-- 이전 스타일 유지 -->
     <style>
-        /* 이전 스타일에 사운드 컨트롤 스타일 추가 */
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            min-height: 100vh;
+        }
+        #loginSection {
+            max-width: 400px;
+            margin: 100px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            display: none;
+        }
+        .title {
+            color: #4a6cf7;
+            font-size: 36px;
+            text-align: center;
+            margin: 30px 0;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        #winner-display {
+            background: linear-gradient(135deg, #4285f4, #6e8efb);
+            color: white;
+            padding: 40px;
+            border-radius: 15px;
+            margin: 20px 0;
+            min-height: 300px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(66, 133, 244, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        #roulette {
+            font-size: 120px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 2px 2px 10px rgba(0,0,0,0.3);
+            height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: font-size 0.3s ease;
+        }
+        .draw-button {
+            background: #4a6cf7;
+            color: white;
+            border: none;
+            padding: 20px 60px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 24px;
+            margin: 20px auto;
+            display: block;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(66, 133, 244, 0.3);
+        }
+        .draw-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(74, 108, 247, 0.4);
+        }
+        .draw-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .participant-count {
+            font-size: 20px;
+            color: #666;
+            text-align: center;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
         .sound-control {
             position: fixed;
             top: 20px;
             right: 20px;
             background: white;
-            padding: 10px;
+            padding: 15px;
             border-radius: 10px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            display: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
             z-index: 1000;
         }
-        .sound-button {
+        .sound-toggle {
             background: none;
             border: none;
             font-size: 24px;
             cursor: pointer;
             padding: 5px;
         }
-        /* 나머지 이전 스타일 동일 */
+        .winning-number {
+            animation: winningPulse 2s infinite;
+        }
+        @keyframes winningPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
     </style>
 </head>
 <body>
-    <!-- 사운드 컨트롤 추가 -->
-    <div class="sound-control">
-        <button onclick="toggleSound()" class="sound-button" id="soundButton">🔊</button>
+    <!-- 사운드 컨트롤 -->
+    <div class="sound-control" style="display: none;">
+        <button onclick="toggleSound()" class="sound-toggle" id="soundButton">🔊</button>
     </div>
 
-    <!-- 이전 HTML 구조 유지 -->
+    <div id="loginSection">
+        <h2 class="title">관리자 로그인</h2>
+        <input type="password" id="password" placeholder="관리자 비밀번호를 입력하세요">
+        <button onclick="checkPassword()" class="draw-button">로그인</button>
+    </div>
+
+    <div class="container">
+        <h1 class="title">럭키드로우 추첨</h1>
+        
+        <div class="participant-count" id="participant-count">
+            참가자 수 확인 중...
+        </div>
+
+        <div id="winner-display">
+            <div id="roulette">
+                시작하세요
+            </div>
+        </div>
+
+        <button class="draw-button" id="drawButton" onclick="startDraw()">
+            🎲 추첨 시작 🎲
+        </button>
+    </div>
 
     <script>
-        // Firebase 설정 유지
         const firebaseConfig = {
-            // ... 기존 설정 유지
+            apiKey: "AIzaSyCTozqFqNkT0EnnwJgD5q27hN7dYK9Oz2Q",
+            authDomain: "lucky-draw-70d93.firebaseapp.com",
+            projectId: "lucky-draw-70d93",
+            storageBucket: "lucky-draw-70d93.firebasestorage.app",
+            messagingSenderId: "524573105650",
+            appId: "1:524573105650:web:9f593c44ca86fcb5381f6b",
+            measurementId: "G-ZGE04HQ2QM",
+            databaseURL: "https://lucky-draw-70d93-default-rtdb.firebaseio.com/"
         };
 
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
         const ADMIN_PASSWORD = "1234";
         
+        // 사운드 설정
+        const drumSound = new Audio('https://cdn.pixabay.com/download/audio/2022/03/10/audio_1b0a1516b4.mp3?filename=drum-roll-6776.mp3');
+        const winSound = new Audio('https://cdn.pixabay.com/download/audio/2021/08/04/audio_bb630cc098.mp3?filename=success-1-6297.mp3');
+        
+        drumSound.volume = 0.5;
+        winSound.volume = 0.5;
+        
+        let isSoundEnabled = true;
         let participants = {};
         let isDrawing = false;
-        let isSoundEnabled = true;
 
-        // 오디오 객체 생성
-        const drumrollSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2874/2874-preview.mp3');
-        const winSound = new Audio('https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3');
-
-        // 볼륨 설정
-        drumrollSound.volume = 0.5;  // 드럼롤 볼륨 50%
-        winSound.volume = 0.7;       // 승리 사운드 볼륨 70%
-
-        // 사운드 토글 함수
         function toggleSound() {
             isSoundEnabled = !isSoundEnabled;
-            document.getElementById('soundButton').textContent = 
-                isSoundEnabled ? '🔊' : '🔇';
-            
-            // 재생 중인 소리 처리
+            document.getElementById('soundButton').textContent = isSoundEnabled ? '🔊' : '🔇';
             if (!isSoundEnabled) {
-                drumrollSound.pause();
+                drumSound.pause();
                 winSound.pause();
             }
         }
 
-        // 사운드 초기화 함수
-        function initSounds() {
-            // iOS Safari 등에서 자동재생 제한 해제를 위한 초기화
-            drumrollSound.play().then(() => {
-                drumrollSound.pause();
-                drumrollSound.currentTime = 0;
-            }).catch(() => {});
-            
-            winSound.play().then(() => {
-                winSound.pause();
-                winSound.currentTime = 0;
-            }).catch(() => {});
+        function playSound(sound) {
+            if (isSoundEnabled) {
+                sound.currentTime = 0;
+                try {
+                    sound.play().catch(err => console.log('Sound play failed:', err));
+                } catch (err) {
+                    console.log('Sound play error:', err);
+                }
+            }
         }
 
         function checkPassword() {
@@ -92,15 +215,26 @@
             if (password === ADMIN_PASSWORD) {
                 document.getElementById('loginSection').style.display = 'none';
                 document.querySelector('.container').style.display = 'block';
-                document.querySelector('.sound-control').style.display = 'block';
+                document.querySelector('.sound-control').style.display = 'flex';
                 loadParticipants();
-                initSounds();  // 사운드 초기화
             } else {
                 alert('비밀번호가 올바르지 않습니다.');
             }
         }
 
-        // 기존 loadParticipants 함수 유지
+        function loadParticipants() {
+            database.ref('participants').on('value', (snapshot) => {
+                participants = snapshot.val() || {};
+                updateParticipantCount();
+            });
+        }
+
+        function updateParticipantCount() {
+            const count = Object.keys(participants).length;
+            document.getElementById('participant-count').textContent = 
+                `현재 참가자 수: ${count}명`;
+            document.getElementById('drawButton').disabled = count === 0;
+        }
 
         async function startDraw() {
             if (Object.keys(participants).length === 0 || isDrawing) return;
@@ -110,12 +244,7 @@
             const roulette = document.getElementById('roulette');
             button.disabled = true;
             
-            // 드럼롤 시작
-            if (isSoundEnabled) {
-                drumrollSound.currentTime = 0;
-                drumrollSound.play();
-                drumrollSound.loop = true;
-            }
+            playSound(drumSound);
             
             const participantArray = Object.entries(participants);
             const winner = participantArray[Math.floor(Math.random() * participantArray.length)];
@@ -126,21 +255,13 @@
 
             function updateRoulette() {
                 if (duration >= maxDuration) {
-                    // 드럼롤 정지 및 승리 사운드 재생
-                    if (isSoundEnabled) {
-                        drumrollSound.pause();
-                        drumrollSound.currentTime = 0;
-                        winSound.currentTime = 0;
-                        winSound.play();
-                    }
+                    drumSound.pause();
+                    drumSound.currentTime = 0;
+                    playSound(winSound);
 
-                    // 당첨자 표시
                     roulette.innerHTML = `<div class="winning-number">${winner[1].empId}</div>`;
-                    createConfetti();
                     
-                    // 당첨자 제거
                     database.ref(`participants/${winner[0]}`).remove();
-                    
                     isDrawing = false;
                     return;
                 }
@@ -157,14 +278,22 @@
             updateRoulette();
         }
 
-        // 나머지 기존 함수들 유지
-
+        // 엔터 키로 로그인
         document.getElementById('password').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 checkPassword();
             }
         });
+
+        // 초기 사운드 로드
+        window.addEventListener('click', function() {
+            playSound(winSound);
+            winSound.pause();
+            winSound.currentTime = 0;
+            playSound(drumSound);
+            drumSound.pause();
+            drumSound.currentTime = 0;
+        }, { once: true });
     </script>
 </body>
 </html>
-
